@@ -13,11 +13,23 @@ endif
 
 LDFLAGS = -lROOTNTuple $(shell root-config --libs)
 
-TARGETS=
+TARGETS = make_data scenario1 scenario2 scenario3
 
 .PHONY: all clean
 
 all: $(TARGETS)
+
+make_data: make_data.cxx
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+scenario1: scenario1.cxx
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+scenario2: scenario2.cxx
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+scenario3: scenario3.cxx
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:
 	rm -f $(TARGETS)

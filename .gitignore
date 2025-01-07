@@ -4,3 +4,11 @@
 
 data/*
 results/*
+
+*.png
+
+# executables
+make_data
+scenario1
+scenario2
+scenario3
