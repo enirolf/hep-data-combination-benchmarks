@@ -88,7 +88,7 @@ void scenario2(std::uint64_t nEntries = 1e4, std::uint32_t nSamples = 4) {
             << std::flush;
 
   for (unsigned i = 0; i < nSamples; ++i) {
-    create_single_sample("ntuple", "data/scenario2/" + nEntriesPerSampleAsString + "_evts_sample" + i + ".root", nEntriesPerSample, i * nEntriesPerSample);
+    create_single_sample("ntuple", "data/scenario2/" + nEntriesAsString + "_evts_sample" + i + ".root", nEntriesPerSample, i * nEntriesPerSample);
   }
 
   std::cout << " done!" << std::endl;
@@ -121,7 +121,7 @@ int main() {
   std::filesystem::create_directories("data/scenario4");
   std::filesystem::create_directories("data/scenario5");
 
-  for (const auto &nEntries : {1e4, 1e6/* , 1e8 */}) {
+  for (const auto &nEntries : {1e6, 1e7, 1e8}) {
     scenario1(nEntries);
     scenario2(nEntries);
     scenario3(nEntries);

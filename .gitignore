@@ -4,11 +4,18 @@
 
 data/*
 results/*
+plots/*
 
 *.png
+*.svg
+# perf output backups
+*.old
 
 # executables
 make_data
 scenario1
 scenario2
 scenario3
+clear_page_cache
+
+.ipynb_checkpoints
