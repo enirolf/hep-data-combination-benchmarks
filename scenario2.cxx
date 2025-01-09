@@ -14,7 +14,7 @@ using ROOT::Experimental::RNTupleProcessor;
 constexpr int N_SAMPLES = 4;
 
 void run_benchmark(const std::vector<std::string> samplePaths,
-                   bool makeHist = false, bool writeLog = false) {
+                   bool debug = false) {
   std::vector<RNTupleOpenSpec> ntuples;
   for (const auto &path : samplePaths) {
     ntuples.emplace_back("ntuple", path);
@@ -35,33 +35,48 @@ void run_benchmark(const std::vector<std::string> samplePaths,
 
   for (const auto &entry [[maybe_unused]] : *processor) {
     if (const auto &nEntries = processor->GetNEntriesProcessed();
-        writeLog && nEntries % 1000 == 0)
+        debug && nEntries % 1000 == 0)
       std::cout << nEntries << " entries processed" << std::endl;
 
     xyz = *x + *y + *z;
 
-    if (makeHist)
+    if (debug)
       hist->Fill(xyz);
   }
 
-  if (makeHist) {
+  if (debug) {
     hist->DrawClone("SAME");
     canvas->SaveAs("scenario2.png");
   }
 
   timer.end();
-  timer.print(/* true */ /** humanReadable */);
+  timer.print(debug /** humanReadable */);
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
+  bool runDebug = false;
+
+  int c;
+
+  while ((c = getopt(argc, argv, "d")) != -1) {
+    switch (c) {
+    case 'd':
+      runDebug = true;
+      break;
+    default:
+      break;
+    }
+  }
+
+  if ((argc - optind) < 1) {
     std::cerr << "please provide the number of events to run with (in "
                  "abbreviated string format, e.g. '10k')"
               << std::endl;
     return 1;
   }
 
-  std::string nEvents = argv[1];
+  std::string nEvents = argv[optind];
+
   std::vector<std::string> samplePaths;
 
   for (unsigned i = 0; i < N_SAMPLES; ++i) {
@@ -69,5 +84,5 @@ int main(int argc, char *argv[]) {
                              std::to_string(i) + ".root");
   }
 
-  run_benchmark(samplePaths);
+  run_benchmark(samplePaths, runDebug);
 }

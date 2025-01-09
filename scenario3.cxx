@@ -10,8 +10,7 @@ using ROOT::Experimental::RNTupleOpenSpec;
 using ROOT::Experimental::RNTupleProcessor;
 
 void run_benchmark(std::string_view primarySamplePath,
-                   std::string_view auxSamplePath, bool makeHist = false,
-                   bool writeLog = false) {
+                   std::string_view auxSamplePath, bool debug = false) {
   const std::vector<RNTupleOpenSpec> ntuples{{"ntuple", primarySamplePath},
                                              {"ntuple_aux", auxSamplePath}};
   auto processor = RNTupleProcessor::CreateJoin(ntuples, {});
@@ -30,34 +29,48 @@ void run_benchmark(std::string_view primarySamplePath,
 
   for (const auto &entry [[maybe_unused]] : *processor) {
     if (const auto &nEntries = processor->GetNEntriesProcessed();
-        writeLog && nEntries % 1000 == 0)
+        debug && nEntries % 50000 == 0)
       std::cout << nEntries << " entries processed" << std::endl;
 
     xyz = *x + *y + *z;
 
-    if (makeHist)
+    if (debug)
       hist->Fill(xyz);
   }
 
-  if (makeHist) {
+  if (debug) {
     hist->DrawClone("SAME");
     canvas->SaveAs("scenario3.png");
   }
 
   timer.end();
-  timer.print(/* true */ /** humanReadable */);
+  timer.print(debug /** humanReadable */);
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
+  bool runDebug = false;
+
+  int c;
+
+  while ((c = getopt(argc, argv, "d")) != -1) {
+    switch (c) {
+    case 'd':
+      runDebug = true;
+      break;
+    default:
+      break;
+    }
+  }
+
+  if ((argc - optind) < 1) {
     std::cerr << "please provide the number of events to run with (in "
                  "abbreviated string format, e.g. '10k')"
               << std::endl;
     return 1;
   }
 
-  std::string nEvents = argv[1];
+  std::string nEvents = argv[optind];
 
-  run_benchmark("data/scenario3/" + nEvents + "_evts_primary.root",
-                "data/scenario3/" + nEvents + "_evts_auxiliary.root");
+  run_benchmark("data/scenario4/" + nEvents + "_evts_primary.root",
+                "data/scenario4/" + nEvents + "_evts_auxiliary.root", runDebug);
 }
