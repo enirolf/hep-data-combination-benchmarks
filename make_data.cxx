@@ -2,14 +2,23 @@
 #include <ROOT/RNTupleModel.hxx>
 #include <ROOT/RNTupleReader.hxx>
 #include <ROOT/RNTupleWriter.hxx>
+#include <ROOT/RNTupleParallelWriter.hxx>
 
+#include <atomic>
 #include <filesystem>
 #include <iostream>
+#include <memory>
+#include <mutex>
 #include <random>
 #include <string>
+#include <thread>
+#include <vector>
+#include <utility>
 
 using ROOT::Experimental::RNTupleModel;
+using ROOT::Experimental::RNTupleParallelWriter;
 using ROOT::Experimental::RNTupleReader;
+using ROOT::Experimental::RNTupleWriteOptions;
 using ROOT::Experimental::RNTupleWriter;
 
 constexpr std::uint64_t SEED=12091997;
@@ -79,7 +88,7 @@ void scenario1(std::uint64_t nEntries = 1e4) {
 void scenario2(std::uint64_t nEntries = 1e4, std::uint32_t nSamples = 4) {
   gen.seed(SEED);
 
-  std::uint64_t nEntriesPerSample = nEntries / nSamples;
+  const std::uint64_t nEntriesPerSample = nEntries / nSamples;
   auto nEntriesAsString = format_n_entries(nEntries);
   auto nEntriesPerSampleAsString = format_n_entries(nEntriesPerSample);
   std::cout << "creating data set for scenario 2 (" << nEntriesAsString
@@ -107,7 +116,49 @@ void scenario3(std::uint64_t nEntries = 1e4) {
 }
 
 void scenario4(std::uint64_t nEntries = 1e4) {
-  // TODO
+  gen.seed(SEED);
+  auto nEntriesAsString = format_n_entries(nEntries);
+  std::cout << "creating data set for scenario 4 (" << nEntriesAsString << " total entries)..." << std::flush;
+
+  create_single_sample("ntuple", "data/scenario4/" + nEntriesAsString + "_evts_primary.root", nEntries, 0, {"x", "y"});
+
+  constexpr unsigned nThreads = 8;
+  const unsigned nEntriesPerThread = nEntries / nThreads;
+
+  auto fnFill = [&nEntriesPerThread](RNTupleParallelWriter *writer) {
+    static std::atomic<std::uint32_t> globalThreadId;
+    const auto threadId = ++globalThreadId;
+
+    auto fillContext = writer->CreateFillContext();
+    auto entry = fillContext->CreateEntry();
+
+    auto fK = entry->GetPtr<std::uint64_t>("k");
+    auto fZ = entry->GetPtr<float>("z");
+
+    for (unsigned i = 0;  i < nEntriesPerThread; ++i) {
+      *fK = nEntriesPerThread * threadId + i;
+      *fZ = dist(gen);
+      fillContext->Fill(*entry);
+    }
+  };
+
+  auto model = RNTupleModel::CreateBare();
+  model->MakeField<std::uint64_t>("k");
+  model->MakeField<float>("z");
+
+  auto writer = RNTupleParallelWriter::Recreate(
+      std::move(model), "ntuple_aux",
+      "data/scenario4/" + nEntriesAsString + "_evts_auxiliary.root");
+
+  std::vector<std::thread> threads;
+  for (unsigned i = 0; i < nThreads; ++i) {
+    threads.emplace_back(fnFill, writer.get());
+  }
+  for (unsigned i = 0; i < nThreads; ++i) {
+    threads[i].join();
+  }
+
+  std::cout << " done!" << std::endl;
 }
 
 void scenario5(std::uint64_t nEntries = 1e4) {
@@ -121,9 +172,10 @@ int main() {
   std::filesystem::create_directories("data/scenario4");
   std::filesystem::create_directories("data/scenario5");
 
-  for (const auto &nEntries : {1e6, 1e7, 1e8}) {
+  for (const auto &nEntries : {1e6, 1e7, 5e7, 1e8}) {
     scenario1(nEntries);
     scenario2(nEntries);
     scenario3(nEntries);
+    scenario4(nEntries);
   }
 }
