@@ -3,7 +3,7 @@ set -euo pipefail
 
 N_REPS=5
 
-for N_EVENTS in {10k,1M,10M,100M}; do
+for N_EVENTS in {1M,10M,50M,100M}; do
   printf "${N_EVENTS} EVENTS\n"
 
   for SCENARIO in {1..3}; do

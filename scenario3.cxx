@@ -71,6 +71,6 @@ int main(int argc, char *argv[]) {
 
   std::string nEvents = argv[optind];
 
-  run_benchmark("data/scenario4/" + nEvents + "_evts_primary.root",
-                "data/scenario4/" + nEvents + "_evts_auxiliary.root", runDebug);
+  run_benchmark("data/scenario3/" + nEvents + "_evts_primary.root",
+                "data/scenario3/" + nEvents + "_evts_auxiliary.root", runDebug);
 }

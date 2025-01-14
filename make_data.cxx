@@ -109,13 +109,43 @@ void scenario3(std::uint64_t nEntries = 1e4) {
   auto nEntriesAsString = format_n_entries(nEntries);
   std::cout << "creating data set for scenario 3 (" << nEntriesAsString << " total entries)..." << std::flush;
 
-  create_single_sample("ntuple", "data/scenario3/" + nEntriesAsString + "_evts_primary.root", nEntries, 0, {"x", "y"});
-  create_single_sample("ntuple_aux", "data/scenario3/" + nEntriesAsString + "_evts_auxiliary.root", nEntries, 0, {"z"});
+  create_single_sample(
+      "ntuple", "data/scenario3/" + nEntriesAsString + "_evts_primary.root",
+      nEntries, 0, {"x", "y"});
+  create_single_sample("ntuple_aux",
+                       "data/scenario3/" + nEntriesAsString +
+                           "_evts_auxiliary.root",
+                       nEntries, 0, {"z"});
 
   std::cout << " done!" << std::endl;
 }
 
-void scenario4(std::uint64_t nEntries = 1e4) {
+void scenario4(std::uint64_t nEntries = 1e4, std::uint32_t nSamples = 4) {
+  gen.seed(SEED);
+
+  const std::uint64_t nEntriesPerSample = nEntries / nSamples;
+  auto nEntriesAsString = format_n_entries(nEntries);
+  auto nEntriesPerSampleAsString = format_n_entries(nEntriesPerSample);
+  std::cout << "creating data set for scenario 4 (" << nEntriesAsString
+            << " total entries, " << nSamples << " samples, "
+            << nEntriesPerSampleAsString << " entries per sample)..."
+            << std::flush;
+
+  for (unsigned i = 0; i < nSamples; ++i) {
+    create_single_sample("ntuple",
+                         "data/scenario4/" + nEntriesAsString +
+                             "_evts_primary_sample" + i + ".root",
+                         nEntriesPerSample, i * nEntriesPerSample, {"x", "y"});
+    create_single_sample("ntuple_aux",
+                         "data/scenario4/" + nEntriesAsString +
+                             "_evts_auxiliary_sample" + i + ".root",
+                         nEntriesPerSample, i * nEntriesPerSample, {"z"});
+  }
+
+  std::cout << " done!" << std::endl;
+}
+
+void scenario_index(std::uint64_t nEntries = 1e4) {
   gen.seed(SEED);
   auto nEntriesAsString = format_n_entries(nEntries);
   std::cout << "creating data set for scenario 4 (" << nEntriesAsString << " total entries)..." << std::flush;
@@ -159,10 +189,6 @@ void scenario4(std::uint64_t nEntries = 1e4) {
   }
 
   std::cout << " done!" << std::endl;
-}
-
-void scenario5(std::uint64_t nEntries = 1e4) {
-  // TODO
 }
 
 int main() {
