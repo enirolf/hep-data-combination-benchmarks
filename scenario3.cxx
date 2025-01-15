@@ -24,9 +24,6 @@ void run_benchmark(std::string_view primarySamplePath,
 
   float xyz;
 
-  auto timer = Timer();
-  timer.start();
-
   for (const auto &entry [[maybe_unused]] : *processor) {
     if (const auto &nEntries = processor->GetNEntriesProcessed();
         debug && nEntries % 50000 == 0)
@@ -42,9 +39,6 @@ void run_benchmark(std::string_view primarySamplePath,
     hist->DrawClone("SAME");
     canvas->SaveAs("scenario3.png");
   }
-
-  timer.end();
-  timer.print(debug /** humanReadable */);
 }
 
 int main(int argc, char *argv[]) {
@@ -71,6 +65,12 @@ int main(int argc, char *argv[]) {
 
   std::string nEvents = argv[optind];
 
+  auto timer = Timer();
+  timer.start();
+
   run_benchmark("data/scenario3/" + nEvents + "_evts_primary.root",
                 "data/scenario3/" + nEvents + "_evts_auxiliary.root", runDebug);
+
+  timer.end();
+  timer.print(runDebug /** humanReadable */);
 }

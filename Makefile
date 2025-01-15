@@ -13,7 +13,7 @@ endif
 
 LDFLAGS = -lROOTNTuple $(shell root-config --libs)
 
-TARGETS = make_data scenario1 scenario2 scenario3 scenario4a scenario4b
+TARGETS = make_data scenario1 scenario2 scenario3 scenario4a scenario4b scenario4_upper_bound
 
 .PHONY: all clean
 

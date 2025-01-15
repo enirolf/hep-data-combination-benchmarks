@@ -30,9 +30,6 @@ void run_benchmark(const std::vector<std::string> &samplePaths,
 
   float xyz;
 
-  auto timer = Timer();
-  timer.start();
-
   for (const auto &entry [[maybe_unused]] : *processor) {
     if (const auto &nEntries = processor->GetNEntriesProcessed();
         debug && nEntries % 1000 == 0)
@@ -48,9 +45,6 @@ void run_benchmark(const std::vector<std::string> &samplePaths,
     hist->DrawClone("SAME");
     canvas->SaveAs("scenario2.png");
   }
-
-  timer.end();
-  timer.print(debug /** humanReadable */);
 }
 
 int main(int argc, char *argv[]) {
@@ -84,5 +78,11 @@ int main(int argc, char *argv[]) {
                              std::to_string(i) + ".root");
   }
 
+  auto timer = Timer();
+  timer.start();
+
   run_benchmark(samplePaths, runDebug);
+
+  timer.end();
+  timer.print(runDebug /** humanReadable */);
 }
