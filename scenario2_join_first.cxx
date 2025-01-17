@@ -4,27 +4,40 @@
 #include <TCanvas.h>
 #include <TH1.h>
 
+#include <filesystem>
+
 #include "timer.hxx"
 
 using ROOT::Experimental::RNTupleOpenSpec;
 using ROOT::Experimental::RNTupleProcessor;
 
-void run_benchmark(std::string_view samplePath, bool debug = false) {
-  const RNTupleOpenSpec ntuple{"ntuple", samplePath};
-  auto processor = RNTupleProcessor::Create(ntuple);
+constexpr int N_SAMPLES = 4;
+
+void run_benchmark(
+    const std::vector<std::pair<std::string, std::string>> &samplePaths,
+    bool debug = false) {
+  std::vector<RNTupleOpenSpec> ntuples;
+  std::vector<std::unique_ptr<RNTupleProcessor>> joinProcessors;
+
+  for (const auto &[primaryPath, auxPath] : samplePaths) {
+    ntuples = {{"ntuple", primaryPath}, {"ntuple_aux", auxPath}};
+    joinProcessors.emplace_back(RNTupleProcessor::CreateJoin(ntuples, {}));
+  }
+  auto processor = RNTupleProcessor::CreateChain(joinProcessors);
 
   auto x = processor->GetEntry().GetPtr<float>("x");
   auto y = processor->GetEntry().GetPtr<float>("y");
-  auto z = processor->GetEntry().GetPtr<float>("z");
+  auto z = processor->GetEntry().GetPtr<float>("ntuple_aux.z");
 
   auto canvas = std::make_unique<TCanvas>();
-  auto hist = std::make_unique<TH1D>("scenario1", "scenario1", 64, -8, 8);
+  auto hist = std::make_unique<TH1D>("scenario2_join_first",
+                                     "scenario2_join_first", 64, -8, 8);
 
   float xyz;
 
   for (const auto &entry [[maybe_unused]] : *processor) {
     if (const auto &nEntries = processor->GetNEntriesProcessed();
-        debug && nEntries % 1000 == 0)
+        debug && nEntries % 50000 == 0)
       std::cout << nEntries << " entries processed" << std::endl;
 
     xyz = *x + *y + *z;
@@ -35,7 +48,7 @@ void run_benchmark(std::string_view samplePath, bool debug = false) {
 
   if (debug) {
     hist->DrawClone("SAME");
-    canvas->SaveAs("scenario1.png");
+    canvas->SaveAs("scenario2_join_first.png");
   }
 }
 
@@ -63,10 +76,20 @@ int main(int argc, char *argv[]) {
 
   std::string nEvents = argv[optind];
 
+  std::vector<std::pair<std::string, std::string>> samplePaths;
+
+  for (unsigned i = 0; i < N_SAMPLES; ++i) {
+    samplePaths.emplace_back(
+        "data/scenario2/" + nEvents + "_evts_primary_sample" +
+            std::to_string(i) + ".root",
+        "data/scenario2/" + nEvents + "_evts_auxiliary_sample" +
+            std::to_string(i) + ".root");
+  }
+
   auto timer = Timer();
   timer.start();
 
-  run_benchmark("data/scenario1/" + nEvents + "_evts.root", runDebug);
+  run_benchmark(samplePaths, runDebug);
 
   timer.end();
   timer.print(runDebug /** humanReadable */);

@@ -4,29 +4,22 @@
 #include <TCanvas.h>
 #include <TH1.h>
 
-#include <filesystem>
-
 #include "timer.hxx"
 
 using ROOT::Experimental::RNTupleOpenSpec;
 using ROOT::Experimental::RNTupleProcessor;
 
-constexpr int N_SAMPLES = 4;
-
-void run_benchmark(const std::vector<std::string> &samplePaths,
-                   bool debug = false) {
-  std::vector<RNTupleOpenSpec> ntuples;
-  for (const auto &path : samplePaths) {
-    ntuples.emplace_back("ntuple", path);
-  }
-  auto processor = RNTupleProcessor::CreateChain(ntuples);
+void run_benchmark(std::string_view samplePath, bool debug = false) {
+  const RNTupleOpenSpec ntuple{"ntuple", samplePath};
+  auto processor = RNTupleProcessor::Create(ntuple);
 
   auto x = processor->GetEntry().GetPtr<float>("x");
   auto y = processor->GetEntry().GetPtr<float>("y");
   auto z = processor->GetEntry().GetPtr<float>("z");
 
   auto canvas = std::make_unique<TCanvas>();
-  auto hist = std::make_unique<TH1D>("scenario2", "scenario2", 64, -8, 8);
+  auto hist = std::make_unique<TH1D>("scenario2_lower_bound",
+                                     "scenario2_lower_bound", 64, -8, 8);
 
   float xyz;
 
@@ -43,7 +36,7 @@ void run_benchmark(const std::vector<std::string> &samplePaths,
 
   if (debug) {
     hist->DrawClone("SAME");
-    canvas->SaveAs("scenario2.png");
+    canvas->SaveAs("scenario2_lower_bound.png");
   }
 }
 
@@ -71,17 +64,11 @@ int main(int argc, char *argv[]) {
 
   std::string nEvents = argv[optind];
 
-  std::vector<std::string> samplePaths;
-
-  for (unsigned i = 0; i < N_SAMPLES; ++i) {
-    samplePaths.emplace_back("data/scenario2/" + nEvents + "_evts_sample" +
-                             std::to_string(i) + ".root");
-  }
-
   auto timer = Timer();
   timer.start();
 
-  run_benchmark(samplePaths, runDebug);
+  run_benchmark("data/scenario2_lower_bound/" + nEvents + "_evts.root",
+                runDebug);
 
   timer.end();
   timer.print(runDebug /** humanReadable */);

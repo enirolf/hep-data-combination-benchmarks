@@ -13,23 +13,34 @@ using ROOT::Experimental::RNTupleProcessor;
 
 constexpr int N_SAMPLES = 4;
 
-void run_benchmark(const std::vector<std::pair<std::string, std::string>> &samplePaths,
+void run_benchmark(const std::vector<std::string> &mainSamplePaths,
+                   const std::vector<std::string> &auxSamplePaths,
                    bool debug = false) {
-  std::vector<RNTupleOpenSpec> ntuples;
-  std::vector<std::unique_ptr<RNTupleProcessor>> joinProcessors;
+  std::vector<RNTupleOpenSpec> mainNTuples;
+  std::vector<RNTupleOpenSpec> auxNTuples;
 
-  for (const auto &[primaryPath, auxPath] : samplePaths) {
-    ntuples = {{"ntuple", primaryPath}, {"ntuple_aux", auxPath}};
-    joinProcessors.emplace_back(RNTupleProcessor::CreateJoin(ntuples, {}));
+  assert(mainSamplePaths.size() == auxSamplePaths.size());
+
+  for (unsigned i = 0; i < mainSamplePaths.size(); ++i) {
+    mainNTuples.emplace_back("ntuple", mainSamplePaths[i]);
+    auxNTuples.emplace_back("ntuple_aux", auxSamplePaths[i]);
   }
-  auto processor = RNTupleProcessor::CreateChain(joinProcessors);
+
+  std::unique_ptr<RNTupleProcessor> mainProcessor =
+      RNTupleProcessor::CreateChain(mainNTuples);
+  std::vector<std::unique_ptr<RNTupleProcessor>> auxProcessors;
+  auxProcessors.push_back(RNTupleProcessor::CreateChain(auxNTuples));
+
+  auto processor =
+      RNTupleProcessor::CreateJoin(std::move(mainProcessor), auxProcessors, {});
 
   auto x = processor->GetEntry().GetPtr<float>("x");
   auto y = processor->GetEntry().GetPtr<float>("y");
   auto z = processor->GetEntry().GetPtr<float>("ntuple_aux.z");
 
   auto canvas = std::make_unique<TCanvas>();
-  auto hist = std::make_unique<TH1D>("scenario4a", "scenario4a", 64, -8, 8);
+  auto hist = std::make_unique<TH1D>("scenario2_union_first",
+                                     "scenario2_union_first", 64, -8, 8);
 
   float xyz;
 
@@ -46,7 +57,7 @@ void run_benchmark(const std::vector<std::pair<std::string, std::string>> &sampl
 
   if (debug) {
     hist->DrawClone("SAME");
-    canvas->SaveAs("scenario4a.png");
+    canvas->SaveAs("scenario2_union_first.png");
   }
 }
 
@@ -74,20 +85,22 @@ int main(int argc, char *argv[]) {
 
   std::string nEvents = argv[optind];
 
-  std::vector<std::pair<std::string, std::string>> samplePaths;
+  std::vector<std::string> mainSamplePaths;
+  std::vector<std::string> auxSamplePaths;
 
   for (unsigned i = 0; i < N_SAMPLES; ++i) {
-    samplePaths.emplace_back(
-        "data/scenario4/" + nEvents + "_evts_primary_sample" +
-            std::to_string(i) + ".root",
-        "data/scenario4/" + nEvents + "_evts_auxiliary_sample" +
-            std::to_string(i) + ".root");
+    mainSamplePaths.emplace_back("data/scenario2/" + nEvents +
+                                 "_evts_primary_sample" + std::to_string(i) +
+                                 ".root");
+    auxSamplePaths.emplace_back("data/scenario2/" + nEvents +
+                                "_evts_auxiliary_sample" + std::to_string(i) +
+                                ".root");
   }
 
   auto timer = Timer();
   timer.start();
 
-  run_benchmark(samplePaths, runDebug);
+  run_benchmark(mainSamplePaths, auxSamplePaths, runDebug);
 
   timer.end();
   timer.print(runDebug /** humanReadable */);

@@ -13,9 +13,11 @@ endif
 
 LDFLAGS = -lROOTNTuple $(shell root-config --libs)
 
-TARGETS = make_data scenario1 scenario2 scenario3 scenario4a scenario4b scenario4_upper_bound
+TARGETS = scenario1_without_combinations scenario1_join_first scenario1_union_first \
+				 	scenario2_lower_bound scenario2_upper_bound scenario2_join_first scenario2_union_first \
+					make_data
 
-.PHONY: all clean
+.PHONY: all clean moreclean
 
 all: $(TARGETS)
 
@@ -32,3 +34,8 @@ clear_page_cache: clear_page_cache.c
 
 clean:
 	rm -f $(TARGETS)
+
+auxclean:
+	rm -f *.png *.svg *.out *out.old
+
+moreclean: clean auxclean
