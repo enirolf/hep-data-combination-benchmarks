@@ -46,27 +46,6 @@ std::string format_n_entries(std::uint64_t nEntries) {
     return std::to_string(nEntries);
 }
 
-void create_data_scenario1(std::string_view sampleName,
-                           std::string_view samplePath,
-                           std::uint64_t nEntries = 1e4,
-                           std::uint64_t kStart = 0) {
-  auto model = RNTupleModel::Create();
-
-  auto fX = model->MakeField<float>("x");
-  auto fY = model->MakeField<float>("y");
-  auto fZ = model->MakeField<float>("z");
-
-  auto ntuple = RNTupleWriter::Recreate(std::move(model), sampleName, samplePath);
-
-  for (unsigned i = 0; i < nEntries; ++i) {
-    *fX = dist(gen);
-    *fY = dist(gen);
-    *fZ = dist(gen);
-
-    ntuple->Fill();
-  }
-}
-
 void scenario1(std::uint64_t nEntries = 1e4, std::uint32_t nSamples = 4) {
   std::string basePath = "data/scenario1/";
   std::filesystem::create_directories(basePath);

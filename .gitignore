@@ -2,7 +2,7 @@
 *.out
 *.so
 
-data/*
+data*/*
 results/*
 plots/*
 
