@@ -1,10 +1,7 @@
 #include <ROOT/RNTuple.hxx>
-#include <ROOT/RNTupleMerger.hxx>
 #include <ROOT/RNTupleModel.hxx>
 #include <ROOT/RNTupleProcessor.hxx>
-#include <ROOT/RNTupleReader.hxx>
 #include <ROOT/RNTupleWriter.hxx>
-#include <ROOT/RPageStorageFile.hxx>
 
 #include <TCanvas.h>
 #include <TH1.h>
@@ -13,15 +10,10 @@
 
 #include "timer.hxx"
 
-using ROOT::Experimental::RNTupleModel;
+using ROOT::RNTupleModel;
+using ROOT::RNTupleWriter;
 using ROOT::Experimental::RNTupleOpenSpec;
 using ROOT::Experimental::RNTupleProcessor;
-using ROOT::Experimental::RNTupleReader;
-using ROOT::Experimental::RNTupleWriteOptions;
-using ROOT::Experimental::RNTupleWriter;
-using ROOT::Experimental::Internal::RNTupleMerger;
-using ROOT::Experimental::Internal::RPageSinkFile;
-using ROOT::Experimental::Internal::RPageSource;
 
 constexpr int N_SAMPLES = 4;
 
@@ -54,7 +46,8 @@ void run_benchmark(const std::vector<std::string> &primaryPaths,
                    const std::vector<std::string> &auxPaths,
                    bool debug = false) {
   auto canvas = std::make_unique<TCanvas>();
-  auto hist = std::make_unique<TH1D>("scenario1_union_first", "scenario1_union_first", 64, -8, 8);
+  auto hist = std::make_unique<TH1D>("scenario1_union_first",
+                                     "scenario1_union_first", 64, -8, 8);
 
   std::vector<RNTupleOpenSpec> primaryNTuples;
   std::vector<RNTupleOpenSpec> auxNTuples;
@@ -64,16 +57,11 @@ void run_benchmark(const std::vector<std::string> &primaryPaths,
     auxNTuples.emplace_back("ntuple_aux", auxPaths[i]);
   }
 
-  std::vector<RNTupleOpenSpec> ntuples;
-  std::vector<std::unique_ptr<RNTupleProcessor>> joinProcessors;
-
-  std::unique_ptr<RNTupleProcessor> primaryProcessor =
-      RNTupleProcessor::CreateChain(primaryNTuples);
-  std::vector<std::unique_ptr<RNTupleProcessor>> auxProcessors;
-  auxProcessors.push_back(RNTupleProcessor::CreateChain(auxNTuples));
+  auto primaryProcessor = RNTupleProcessor::CreateChain(primaryNTuples);
+  auto auxProcessor = RNTupleProcessor::CreateChain(auxNTuples);
 
   auto processor = RNTupleProcessor::CreateJoin(std::move(primaryProcessor),
-                                                auxProcessors, {});
+                                                std::move(auxProcessor), {});
 
   auto x = processor->GetEntry().GetPtr<float>("x");
   auto y = processor->GetEntry().GetPtr<float>("y");

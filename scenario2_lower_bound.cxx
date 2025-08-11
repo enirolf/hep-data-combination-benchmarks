@@ -9,7 +9,7 @@
 using ROOT::Experimental::RNTupleOpenSpec;
 using ROOT::Experimental::RNTupleProcessor;
 
-void run_benchmark(std::string_view samplePath, bool debug = false) {
+void run_benchmark(const std::string &samplePath, bool debug = false) {
   const RNTupleOpenSpec ntuple{"ntuple", samplePath};
   auto processor = RNTupleProcessor::Create(ntuple);
 

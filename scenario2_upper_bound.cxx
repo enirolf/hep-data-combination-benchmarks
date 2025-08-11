@@ -14,15 +14,15 @@
 
 #include "timer.hxx"
 
-using ROOT::Experimental::RNTupleModel;
+using ROOT::RNTupleModel;
+using ROOT::RNTupleReader;
+using ROOT::RNTupleWriteOptions;
+using ROOT::RNTupleWriter;
 using ROOT::Experimental::RNTupleOpenSpec;
 using ROOT::Experimental::RNTupleProcessor;
-using ROOT::Experimental::RNTupleReader;
-using ROOT::Experimental::RNTupleWriteOptions;
-using ROOT::Experimental::RNTupleWriter;
 using ROOT::Experimental::Internal::RNTupleMerger;
-using ROOT::Experimental::Internal::RPageSinkFile;
-using ROOT::Experimental::Internal::RPageSource;
+using ROOT::Internal::RPageSinkFile;
+using ROOT::Internal::RPageSource;
 
 constexpr int N_SAMPLES = 4;
 
@@ -79,11 +79,11 @@ void merge_samples(const std::vector<std::string> &mainSamplePaths,
 
   auto destination = std::make_unique<RPageSinkFile>("ntuple", outputPath,
                                                      RNTupleWriteOptions());
-  RNTupleMerger merger;
-  merger.Merge(sampleSourcePtrs, *destination);
+  RNTupleMerger merger(std::move(destination));
+  merger.Merge(sampleSourcePtrs);
 }
 
-void run_benchmark(std::string_view samplePath, bool debug = false) {
+void run_benchmark(const std::string &samplePath, bool debug = false) {
   const RNTupleOpenSpec ntuple{"ntuple", samplePath};
   auto processor = RNTupleProcessor::Create(ntuple);
 

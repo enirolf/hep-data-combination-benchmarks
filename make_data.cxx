@@ -2,24 +2,17 @@
 #include <ROOT/RNTupleModel.hxx>
 #include <ROOT/RNTupleReader.hxx>
 #include <ROOT/RNTupleWriter.hxx>
-#include <ROOT/RNTupleParallelWriter.hxx>
 
-#include <atomic>
 #include <filesystem>
 #include <iostream>
 #include <memory>
-#include <mutex>
 #include <random>
 #include <string>
-#include <thread>
-#include <vector>
 #include <utility>
 
-using ROOT::Experimental::RNTupleModel;
-using ROOT::Experimental::RNTupleParallelWriter;
-using ROOT::Experimental::RNTupleReader;
-using ROOT::Experimental::RNTupleWriteOptions;
-using ROOT::Experimental::RNTupleWriter;
+using ROOT::RNTupleModel;
+using ROOT::RNTupleReader;
+using ROOT::RNTupleWriter;
 
 constexpr std::uint64_t SEED=12091997;
 std::mt19937 gen{SEED};
@@ -27,8 +20,6 @@ std::normal_distribution dist;
 
 void print_ntuple_info(std::string_view sampleName, std::string_view samplePath, std::uint64_t nEntries = 5) {
   auto ntuple = RNTupleReader::Open(sampleName, samplePath);
-
-  // ntuple->PrintInfo();
 
   for (unsigned i = 0; i < nEntries; ++i) {
     ntuple->Show(i);
@@ -158,10 +149,60 @@ void scenario2(std::uint64_t nEntries = 1e4, std::uint32_t nSamples = 4) {
   std::cout << " done!" << std::endl;
 }
 
+void scenario2_join_field(std::uint64_t nEntries = 1e4,
+                          std::uint32_t nSamples = 4) {
+  std::string basePath = "data/scenario2_join_field/";
+std::filesystem::create_directories(basePath);
+gen.seed(SEED);
+
+const std::uint64_t nEntriesPerSample = nEntries / nSamples;
+auto nEntriesAsString = format_n_entries(nEntries);
+auto nEntriesPerSampleAsString = format_n_entries(nEntriesPerSample);
+std::cout << "creating scenario 2 data (" << nEntriesAsString
+          << " total entries, " << nSamples << " samples, "
+          << nEntriesPerSampleAsString << " entries per sample)..."
+          << std::flush;
+
+for (unsigned i = 0; i < nSamples; ++i) {
+  auto primaryModel = RNTupleModel::Create();
+  auto fIPrimary = primaryModel->MakeField<std::uint64_t>("i");
+  auto fX = primaryModel->MakeField<float>("x");
+  auto fY = primaryModel->MakeField<float>("y");
+
+  auto auxiliaryModel = RNTupleModel::Create();
+  auto fIAux = auxiliaryModel->MakeField<std::uint64_t>("i");
+  auto fZ = auxiliaryModel->MakeField<float>("z");
+
+  auto primaryNTuple = RNTupleWriter::Recreate(
+      std::move(primaryModel), "ntuple",
+      basePath + nEntriesAsString + "_evts_primary_sample" + i + ".root");
+
+  auto auxiliaryNTuple = RNTupleWriter::Recreate(
+      std::move(auxiliaryModel), "ntuple_aux",
+      basePath + nEntriesAsString + "_evts_auxiliary_sample" + i + ".root");
+
+  for (std::uint64_t j = 0; j < nEntriesPerSample; ++j) {
+    *fIPrimary = (i * nEntriesPerSample) + j;
+    *fX = dist(gen);
+    *fY = dist(gen);
+    primaryNTuple->Fill();
+  }
+
+  for (std::int64_t j = nEntriesPerSample - 1; j >= 0; --j) {
+    *fIAux = (i * nEntriesPerSample) + j;
+    *fZ = dist(gen);
+    auxiliaryNTuple->Fill();
+  }
+}
+
+std::cout << " done!" << std::endl;
+}
+
 int main() {
   for (const auto &nEntries : {1e6, 1e7, 5e7, 1e8}) {
     scenario1(nEntries);
     scenario2_lower_bound(nEntries);
     scenario2(nEntries);
+    scenario2_join_field(nEntries);
   }
 }

@@ -20,8 +20,7 @@ void run_benchmark(
   std::vector<std::unique_ptr<RNTupleProcessor>> joinProcessors;
 
   for (const auto &[primaryPath, auxPath] : samplePaths) {
-    joinProcessors.emplace_back(RNTupleProcessor::CreateJoin(
-        {"ntuple", primaryPath}, {"ntuple_aux", auxPath}, {}));
+    joinProcessors.emplace_back(RNTupleProcessor::CreateJoin({"ntuple", primaryPath}, {{"ntuple_aux", auxPath}}, {"i"}));
   }
   auto processor = RNTupleProcessor::CreateChain(std::move(joinProcessors));
 
@@ -30,8 +29,8 @@ void run_benchmark(
   auto z = processor->GetEntry().GetPtr<float>("ntuple_aux.z");
 
   auto canvas = std::make_unique<TCanvas>();
-  auto hist = std::make_unique<TH1D>("scenario2_join_first",
-                                     "scenario2_join_first", 64, -8, 8);
+  auto hist = std::make_unique<TH1D>("scenario2_join_field_join_first",
+                                     "scenario2_join_field_join_first", 64, -8, 8);
 
   float xyz;
 
@@ -48,7 +47,7 @@ void run_benchmark(
 
   if (debug) {
     hist->DrawClone("SAME");
-    canvas->SaveAs("scenario2_join_first.png");
+    canvas->SaveAs("scenario2_join_field_join_first.png");
   }
 }
 
@@ -80,9 +79,9 @@ int main(int argc, char *argv[]) {
 
   for (unsigned i = 0; i < N_SAMPLES; ++i) {
     samplePaths.emplace_back(
-        "data/scenario2/" + nEvents + "_evts_primary_sample" +
+        "data/scenario2_join_field/" + nEvents + "_evts_primary_sample" +
             std::to_string(i) + ".root",
-        "data/scenario2/" + nEvents + "_evts_auxiliary_sample" +
+        "data/scenario2_join_field/" + nEvents + "_evts_auxiliary_sample" +
             std::to_string(i) + ".root");
   }
 

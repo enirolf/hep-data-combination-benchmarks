@@ -1,10 +1,7 @@
 #include <ROOT/RNTuple.hxx>
-#include <ROOT/RNTupleMerger.hxx>
 #include <ROOT/RNTupleModel.hxx>
 #include <ROOT/RNTupleProcessor.hxx>
-#include <ROOT/RNTupleReader.hxx>
 #include <ROOT/RNTupleWriter.hxx>
-#include <ROOT/RPageStorageFile.hxx>
 
 #include <TCanvas.h>
 #include <TH1.h>
@@ -13,15 +10,10 @@
 
 #include "timer.hxx"
 
-using ROOT::Experimental::RNTupleModel;
+using ROOT::RNTupleModel;
+using ROOT::RNTupleWriter;
 using ROOT::Experimental::RNTupleOpenSpec;
 using ROOT::Experimental::RNTupleProcessor;
-using ROOT::Experimental::RNTupleReader;
-using ROOT::Experimental::RNTupleWriteOptions;
-using ROOT::Experimental::RNTupleWriter;
-using ROOT::Experimental::Internal::RNTupleMerger;
-using ROOT::Experimental::Internal::RPageSinkFile;
-using ROOT::Experimental::Internal::RPageSource;
 
 constexpr int N_SAMPLES = 4;
 
@@ -60,10 +52,10 @@ void run_benchmark(const std::vector<std::string> &primaryPaths,
   std::vector<std::unique_ptr<RNTupleProcessor>> joinProcessors;
 
   for (unsigned i = 0; i < primaryPaths.size(); ++i) {
-    ntuples = {{"ntuple", primaryPaths[i]}, {"ntuple_aux", auxPaths[i]}};
-    joinProcessors.emplace_back(RNTupleProcessor::CreateJoin(ntuples, {}));
-  }
-  auto processor = RNTupleProcessor::CreateChain(joinProcessors);
+    joinProcessors.emplace_back(RNTupleProcessor::CreateJoin(
+        {"ntuple", primaryPaths[i]}, {"ntuple_aux", auxPaths[i]}, {}));
+}
+  auto processor = RNTupleProcessor::CreateChain(std::move(joinProcessors));
 
   auto x = processor->GetEntry().GetPtr<float>("x");
   auto y = processor->GetEntry().GetPtr<float>("y");

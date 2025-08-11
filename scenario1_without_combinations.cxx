@@ -1,10 +1,7 @@
 #include <ROOT/RNTuple.hxx>
-#include <ROOT/RNTupleMerger.hxx>
 #include <ROOT/RNTupleModel.hxx>
 #include <ROOT/RNTupleProcessor.hxx>
-#include <ROOT/RNTupleReader.hxx>
 #include <ROOT/RNTupleWriter.hxx>
-#include <ROOT/RPageStorageFile.hxx>
 
 #include <TCanvas.h>
 #include <TH1.h>
@@ -13,15 +10,10 @@
 
 #include "timer.hxx"
 
-using ROOT::Experimental::RNTupleModel;
+using ROOT::RNTupleModel;
+using ROOT::RNTupleWriter;
 using ROOT::Experimental::RNTupleOpenSpec;
 using ROOT::Experimental::RNTupleProcessor;
-using ROOT::Experimental::RNTupleReader;
-using ROOT::Experimental::RNTupleWriteOptions;
-using ROOT::Experimental::RNTupleWriter;
-using ROOT::Experimental::Internal::RNTupleMerger;
-using ROOT::Experimental::Internal::RPageSinkFile;
-using ROOT::Experimental::Internal::RPageSource;
 
 constexpr int N_SAMPLES = 4;
 

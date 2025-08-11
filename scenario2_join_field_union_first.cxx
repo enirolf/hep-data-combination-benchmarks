@@ -4,6 +4,8 @@
 #include <TCanvas.h>
 #include <TH1.h>
 
+#include <filesystem>
+
 #include "timer.hxx"
 
 using ROOT::Experimental::RNTupleOpenSpec;
@@ -24,19 +26,21 @@ void run_benchmark(const std::vector<std::string> &mainSamplePaths,
     auxNTuples.emplace_back("ntuple_aux", auxSamplePaths[i]);
   }
 
-  auto mainProcessor = RNTupleProcessor::CreateChain(std::move(mainNTuples));
-  auto auxProcessor = RNTupleProcessor::CreateChain(std::move(auxNTuples));
+  std::unique_ptr<RNTupleProcessor> mainProcessor =
+      RNTupleProcessor::CreateChain(mainNTuples);
+  std::vector<std::unique_ptr<RNTupleProcessor>> auxProcessors;
+  auxProcessors.push_back(RNTupleProcessor::CreateChain(std::move(auxNTuples)));
 
-  auto processor = RNTupleProcessor::CreateJoin(std::move(mainProcessor),
-                                                std::move(auxProcessor), {});
+  auto processor =
+      RNTupleProcessor::CreateJoin(std::move(mainProcessor), std::move(auxProcessors), {"i"});
 
   auto x = processor->GetEntry().GetPtr<float>("x");
   auto y = processor->GetEntry().GetPtr<float>("y");
   auto z = processor->GetEntry().GetPtr<float>("ntuple_aux.z");
 
   auto canvas = std::make_unique<TCanvas>();
-  auto hist = std::make_unique<TH1D>("scenario2_union_first",
-                                     "scenario2_union_first", 64, -8, 8);
+  auto hist = std::make_unique<TH1D>("scenario2_join_field_union_first",
+                                     "scenario2_join_field_union_first", 64, -8, 8);
 
   float xyz;
 
@@ -53,7 +57,7 @@ void run_benchmark(const std::vector<std::string> &mainSamplePaths,
 
   if (debug) {
     hist->DrawClone("SAME");
-    canvas->SaveAs("scenario2_union_first.png");
+    canvas->SaveAs("scenario2_join_field_union_first.png");
   }
 }
 
@@ -85,10 +89,10 @@ int main(int argc, char *argv[]) {
   std::vector<std::string> auxSamplePaths;
 
   for (unsigned i = 0; i < N_SAMPLES; ++i) {
-    mainSamplePaths.emplace_back("data/scenario2/" + nEvents +
+    mainSamplePaths.emplace_back("data/scenario2_join_field/" + nEvents +
                                  "_evts_primary_sample" + std::to_string(i) +
                                  ".root");
-    auxSamplePaths.emplace_back("data/scenario2/" + nEvents +
+    auxSamplePaths.emplace_back("data/scenario2_join_field/" + nEvents +
                                 "_evts_auxiliary_sample" + std::to_string(i) +
                                 ".root");
   }

@@ -17,7 +17,7 @@ TARGETS = scenario1_without_combinations scenario1_join_first scenario1_union_fi
 				 	scenario2_lower_bound scenario2_upper_bound scenario2_join_first scenario2_union_first \
 					make_data
 
-.PHONY: all clean moreclean
+.PHONY: all clean moreclean scenario2_join_field
 
 all: $(TARGETS)
 
@@ -26,6 +26,9 @@ make_data: make_data.cxx
 
 scenario%: scenario%.cxx
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+scenario2_join_field: scenario2_join_field_join_first scenario2_join_field_union_first
+
 
 clear_page_cache: clear_page_cache.c
 	gcc -Wall -g -o $@ $<

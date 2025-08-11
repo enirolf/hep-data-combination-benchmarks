@@ -19,7 +19,10 @@ scenario2_lower_bound
 scenario2_upper_bound
 scenario2_join_first
 scenario2_union_first
+scenario2_join_field_join_first
+scenario2_join_field_union_first
 make_data
 clear_page_cache
 
 .ipynb_checkpoints
+.virtual_documents
